@@ -6,6 +6,7 @@ const prisma = new PrismaClient();
 require('dotenv').config();
 
 module.exports = {
+
   async register(req, res) {
     const { email, password, name } = req.body;
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -39,6 +40,7 @@ module.exports = {
     res.json({ token });
   },
 
+  //Testar rota com autenticação
   async me(req, res) {
 
     const { userId } = req.user;
