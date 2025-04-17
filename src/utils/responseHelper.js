@@ -1,6 +1,6 @@
 exports.successResponse = (res, message, status = 200, data = {}, meta = {}) => {
     return res.status(200).json({
-      success: false,
+      hasError: false,
       message,
       data,
       meta,
