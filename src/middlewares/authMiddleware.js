@@ -8,15 +8,19 @@ const authMiddleware = (req, res, next) => {
     return res.status(401).json({ error: 'Token não fornecido' });
   }
 
-  const token = authHeader.split(' ')[1]; // "Bearer <token>"
-
+  const token = authHeader.split(' ')[1];
   if (!token) {
     return res.status(401).json({ error: 'Token inválido' });
   }
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded; // você pode acessar req.user em qualquer rota depois
+
+    if (!decoded || !decoded.id) {
+      return res.status(401).json({ error: 'Token malformado ou sem ID de usuário' });
+    }
+
+    req.user = decoded;
     next();
   } catch (err) {
     return res.status(401).json({ error: 'Token inválido ou expirado' });
