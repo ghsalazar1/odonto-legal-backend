@@ -1,57 +1,79 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const cookieParser = require('cookie-parser');
+const dotenv = require('dotenv');
 const authRoutes = require('./routes/auth.routes');
 const userRoutes = require('./routes/users.routes');
 const initAdminMiddleware = require('./middlewares/initAdminMiddleware');
 const setupSwagger = require('./utils/swagger');
-require('dotenv').config();
+
+dotenv.config();
 
 const app = express();
 
-// Middleware para converter o JSON
+// -------------------------------
+// 🛡️ Middlewares globais
+// -------------------------------
+
 app.use(express.json());
+app.use(cookieParser());
+app.use(cors({
+  origin: 'http://localhost:4200', // ou o domínio do seu Angular
+  credentials: true
+}));
 
-app.use(cors());
-
-// Middleware para Swagger
+// -------------------------------
+// 📄 Swagger Docs
+// -------------------------------
 setupSwagger(app);
 
-// Servir arquivos estáticos da pasta 'public'
+// -------------------------------
+// 📁 Arquivos estáticos (ex: uploads)
+// -------------------------------
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Middleware de usuário inicial e tabela de roles
+// -------------------------------
+// 🚀 Inicialização de admin e roles
+// -------------------------------
 initAdminMiddleware()
-.then(() => {
-  console.log('Middleware de inicialização executado com sucesso.');
-})
-.catch((err) => {
-  console.error('Erro na inicialização:', err);
-});
+  .then(() => {
+    console.log('Admin e roles carregados com sucesso.');
+  })
+  .catch((err) => {
+    console.error('Erro ao inicializar admin/roles:', err);
+  });
 
-// Rota para a raiz ('/')
+// -------------------------------
+// 🌐 Rotas
+// -------------------------------
 app.get('/', (req, res) => {
-  res.send('Bem-vindo à aplicação!'); // Ou redirecione para uma página específica
+  res.send('🚀 Bem-vindo à API Odonto Legal!');
 });
 
-// Rotas de autenticação
 app.use('/auth', authRoutes);
 app.use('/users', userRoutes);
 
-// Middleware para tratar rotas não encontradas
+// -------------------------------
+// ❓ Rota não encontrada
+// -------------------------------
 app.use((req, res, next) => {
-  res.status(404).send('Página não encontrada');
+  res.status(404).json({ error: 'Rota não encontrada' });
 });
 
-// Middleware para tratamento de erros
+// -------------------------------
+// 💥 Tratamento de erros genéricos
+// -------------------------------
 app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).send('Algo deu errado!');
+  console.error('[ERRO INTERNO]', err.stack);
+  res.status(500).json({ error: 'Erro interno do servidor' });
 });
 
-// Iniciar o servidor
+// -------------------------------
+// 🚀 Inicialização do servidor
+// -------------------------------
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`Swagger -> http://localhost:${PORT}/api-docs`);
+  console.log(`✅ Servidor rodando: http://localhost:${PORT}`);
+  console.log(`📚 Swagger: http://localhost:${PORT}/api-docs`);
 });
-
