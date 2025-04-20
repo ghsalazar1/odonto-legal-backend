@@ -31,6 +31,23 @@ async function listUsers(query) {
   });
 }
 
+async function getAll() {
+
+  const users = await prisma.user.findMany({
+    where: {
+      isActive: true
+    },
+    include: { role: true },
+  });
+
+  const total = await prisma.user.count({ where: { isActive: true } });
+
+  return new PaginatedUserResponseDTO({
+    data: users,
+    total,
+  });
+}
+
 async function createUser({ name, email, password, roleId }) {
   // Verifica se já existe um usuário ativo com o mesmo e-mail
   const userExists = await prisma.user.findFirst({
@@ -140,5 +157,6 @@ module.exports = {
   createUser,
   deleteUser,
   getUserById,
-  updateUser
+  updateUser,
+  getAll
 };

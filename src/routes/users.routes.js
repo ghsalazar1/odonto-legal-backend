@@ -6,7 +6,7 @@ const authMiddleware = require('../middlewares/authMiddleware');
 /**
  * @swagger
  * tags:
- *   name: Users
+ *   name: Usuários
  *   description: Endpoints de gerenciamento de usuários
  */
 
@@ -44,7 +44,25 @@ const authMiddleware = require('../middlewares/authMiddleware');
  *         description: Não autorizado
  */
 
-router.get('/', userController.list);
+router.get('/', authMiddleware, userController.list);
+
+
+/**
+ * @swagger
+ * /users/getAll:
+ *   get:
+ *     summary: Lista usuários sem paginação e filtro
+ *     tags: [Usuários]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Lista de usuários completa
+ *       401:
+ *         description: Não autorizado
+ */
+
+router.get('/getAll', authMiddleware, userController.getAll);
 
 
 /**
