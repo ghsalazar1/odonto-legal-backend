@@ -13,6 +13,18 @@ exports.list = async (req, res) => {
   }
 };
 
+exports.getAll = async (req, res) => {
+  try {
+
+    const result = await UserService.getAll();
+    return successResponse(res, 'Usuários listados com sucesso', 200, result.data, result.meta);
+  
+  } catch (err) {
+    console.error('Erro no controller:', err);
+    return errorResponse(res, 'Erro ao listar usuários', 500, err);
+  }
+};
+
 
 exports.create = async (req, res) => {
   try {
