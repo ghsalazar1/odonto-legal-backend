@@ -7,22 +7,68 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Role {
-  id          String   @id @map("_id") // ID manual, tipo string (ex: "1", "2", "3")
-  description String
-
-  users       User[]   @relation("UserRole")
-}
-
 model User {
   id                    String   @id @default(auto()) @map("_id") @db.ObjectId
   email                 String   @unique
   password              String
   name                  String
-  forgotPasswordToken   String?
-  roleId   String? 
-  role     Role?    @relation("UserRole", fields: [roleId], references: [id])
-  isActive  Boolean  @default(true)
+  isActive              Boolean  @default(true)
+  roleId                String?
+  role                  Role?    @relation("UserRole", fields: [roleId], references: [id])
+  casesAsPerito         Case[]   @relation("PeritoPrincipal")
+  caseParticipants      CaseParticipant[]
 
+  refreshToken          String?
+  refreshTokenLastUsed  DateTime?
+  refreshTokenCreatedAt DateTime?
+
+  forgotPasswordToken   String?
 }
 
+model Role {
+  id          String   @id @map("_id")
+  description String
+  users       User[]   @relation("UserRole")
+}
+
+model Case {
+  id                  String             @id @default(auto()) @map("_id") @db.ObjectId
+  title               String
+  description         String
+  status              String             // "Em andamento", "Finalizado", "Arquivado"
+  openedAt            DateTime           @default(now())
+  closedAt            DateTime?
+
+  peritoPrincipalId   String
+  peritoPrincipal     User               @relation("PeritoPrincipal", fields: [peritoPrincipalId], references: [id])
+
+  evidences           Evidence[]
+  caseParticipants    CaseParticipant[]
+}
+
+model CaseParticipant {
+  id      String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId String
+  caseId String
+
+  user   User   @relation(fields: [userId], references: [id])
+  case   Case   @relation(fields: [caseId], references: [id])
+}
+
+model Evidence {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  type       EvidenceType
+  contentUrl String?   // Caminho/URL do arquivo se for imagem, documento ou áudio
+  textData   String?   // Para evidência textual
+  createdAt  DateTime  @default(now())
+  caseId     String
+  case       Case      @relation(fields: [caseId], references: [id])
+}
+
+enum EvidenceType {
+  IMAGE
+  AUDIO
+  DOCUMENT
+  TEXT
+  OTHER
+}
