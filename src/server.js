@@ -8,6 +8,11 @@ const userRoutes = require('./routes/users.routes');
 const initAdminMiddleware = require('./middlewares/initAdminMiddleware');
 const setupSwagger = require('./utils/swagger');
 
+const allowedOrigins = [
+  'http://localhost:4200',
+  'https://odonto-legal.netlify.app',
+];
+
 dotenv.config();
 
 const app = express();
@@ -18,11 +23,21 @@ const app = express();
 
 app.use(express.json());
 app.use(cookieParser());
-app.use(cors({
-  origin: 'http://localhost:4200', // ou o domínio do seu Angular
-  credentials: true
-}));
 
+app.use(cors({
+  origin: function (origin, callback) {
+    if (!origin) return callback(null, true);
+
+    if (allowedOrigins.some(o =>
+      typeof o === 'string' ? o === origin : o.test(origin)
+    )) {
+      return callback(null, true);
+    }
+
+    callback(new Error('Not allowed by CORS'));
+  },
+  credentials: true,
+}));
 // -------------------------------
 // 📄 Swagger Docs
 // -------------------------------
