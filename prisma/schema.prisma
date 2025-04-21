@@ -36,6 +36,7 @@ model Case {
   title               String
   description         String
   status              String             // "Em andamento", "Finalizado", "Arquivado"
+  caseDate            DateTime
   openedAt            DateTime           @default(now())
   closedAt            DateTime?
 

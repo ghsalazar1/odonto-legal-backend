@@ -41,7 +41,6 @@ exports.delete = async (req, res) => {
     const { id } = req.params;
     const currentUserId = req.user.id;
 
-    // Impede autoexclusão
     if (id === currentUserId) {
       return errorResponse(res, 'Você não pode excluir a si mesmo.', 403);
     }

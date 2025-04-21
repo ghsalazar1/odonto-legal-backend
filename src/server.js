@@ -5,11 +5,13 @@ const cookieParser = require('cookie-parser');
 const dotenv = require('dotenv');
 const authRoutes = require('./routes/auth.routes');
 const userRoutes = require('./routes/users.routes');
+const casesRoutes = require('./routes/cases.routes');
 const initAdminMiddleware = require('./middlewares/initAdminMiddleware');
 const setupSwagger = require('./utils/swagger');
 
 const allowedOrigins = [
   'http://localhost:4200',
+  'http://localhost:3000',
   'https://odonto-legal.netlify.app',
 ];
 
@@ -68,6 +70,7 @@ app.get('/', (req, res) => {
 
 app.use('/auth', authRoutes);
 app.use('/users', userRoutes);
+app.use('/cases', casesRoutes);
 
 // -------------------------------
 // ❓ Rota não encontrada
