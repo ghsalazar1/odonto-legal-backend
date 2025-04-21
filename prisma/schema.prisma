@@ -36,8 +36,11 @@ model Case {
   title               String
   description         String
   status              String             // "Em andamento", "Finalizado", "Arquivado"
+  caseDate            DateTime
   openedAt            DateTime           @default(now())
   closedAt            DateTime?
+
+  avatar              String?
 
   peritoPrincipalId   String
   peritoPrincipal     User               @relation("PeritoPrincipal", fields: [peritoPrincipalId], references: [id])

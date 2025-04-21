@@ -12,12 +12,12 @@ module.exports = async () => {
 
   } catch (err) {
     console.error('Erro no middleware de inicialização:', err);
-    throw err; // rethrow para o catch lá no server.js capturar
+    throw err; 
   }
 };
 
 async function checkAdmin() {
-      // Verifica e cria admin
+    // Verifica e cria admin
     const adminExists = await prisma.user.findFirst({
       where: { email: 'admin' },
     });

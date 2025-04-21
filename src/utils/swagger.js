@@ -30,7 +30,7 @@ const options = {
       },
     ],
   },
-  apis: ['./src/routes/*.js'], // caminhos onde suas anotações estão
+  apis: ['./src/routes/*.js'],
 };
 
 const swaggerSpec = swaggerJsDoc(options);
