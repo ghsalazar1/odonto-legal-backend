@@ -9,7 +9,7 @@ module.exports = {
     return jwt.sign(
       { id: user.id, email: user.email, role: user.role?.description },
       process.env.JWT_SECRET,
-      { expiresIn: '15m' }
+      { expiresIn: '1h' }
     );
   },
 

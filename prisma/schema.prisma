@@ -40,6 +40,8 @@ model Case {
   openedAt            DateTime           @default(now())
   closedAt            DateTime?
 
+  avatar              String?
+
   peritoPrincipalId   String
   peritoPrincipal     User               @relation("PeritoPrincipal", fields: [peritoPrincipalId], references: [id])
 
