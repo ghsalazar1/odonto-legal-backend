@@ -297,14 +297,34 @@ const CaseService = {
         },
         caseParticipants: {
           include: {
-            user: { select: { id: true } }
+            user: {
+              select: {
+                id: true,
+                name: true,
+                avatar: true,
+                role: {
+                  select: {
+                    description: true
+                  }
+                }
+              }
+            }
           }
         },
         peritoPrincipal: {
-          select: { id: true }
+          select: {
+            id: true,
+            name: true,
+            avatar: true,
+            role: {
+              select: {
+                description: true
+              }
+            }
+          }
         }
       }
-    });
+    });    
   
     if (!caso) {
       throw new Error('Caso não encontrado');
@@ -349,11 +369,22 @@ const CaseService = {
       caseDate: caso.caseDate.toISOString().split('T')[0],
       openedAt: caso.openedAt.toISOString().split('T')[0],
       closedAt: caso.closedAt ? caso.closedAt.toISOString().split('T')[0] : null,
-      peritoPrincipalId: caso.peritoPrincipal?.id ?? '',
-      participants: caso.caseParticipants.map(cp => cp.user.id),
+      peritoPrincipal: {
+        id: caso.peritoPrincipal?.id ?? '',
+        name: caso.peritoPrincipal?.name ?? '',
+        role: caso.peritoPrincipal?.role?.description ?? '',
+        avatar: caso.peritoPrincipal?.avatar ?? null
+      },
+      participants: caso.caseParticipants.map(cp => ({
+        id: cp.user.id,
+        name: cp.user.name,
+        role: cp.user.role?.description ?? '',
+        avatar: cp.user.avatar ?? null
+      })),
       existingEvidences: evidencesWithUrls,
       newEvidences: []
     };
+    
   }
   
 };

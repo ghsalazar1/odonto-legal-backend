@@ -68,6 +68,7 @@ async function createUser({ name, email, password, roleId }) {
       email,
       password: hashedPassword,
       roleId,
+      avatar: '',
       isActive: true,
     },
     include: {
