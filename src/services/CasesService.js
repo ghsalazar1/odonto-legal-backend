@@ -1,8 +1,12 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
-const fs = require('fs');
-const path = require('path');
-const { storeFile } = require('../utils/fileStorage');
+const { uploadEvidence, removeEvidenceFile } = require('../utils/uploadEvidence');
+const { sanitizeFolderName } = require('../utils/helpers'); 
+const { createClient } = require('@supabase/supabase-js');
+require('dotenv').config();
+
+const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
+const isProduction = process.env.IS_PRODUCTION === 'true';
 
 const CaseService = {
   async createCase(req) {
@@ -15,15 +19,33 @@ const CaseService = {
       caseDate,
       peritoPrincipalId,
     } = req.body;
-
+  
+    // 🔍 Verifica se já existe um caso com o mesmo título
+    const existingCase = await prisma.case.findFirst({
+      where: {
+        title: {
+          equals: title,
+          mode: 'insensitive'
+        }
+      }
+    });
+  
+    if (existingCase) {
+      return {
+        success: false,
+        reason: 'title_exists',
+        message: 'Já existe um caso com este título.'
+      };
+    }
+  
     const participants = Array.isArray(req.body.participants)
       ? req.body.participants
       : [req.body.participants].filter(Boolean);
-
+  
     const evidences = [];
-
+  
     for (let file of req.files || []) {
-      const url = await storeFile(file, title); // passa o title
+      const url = await uploadEvidence(file, sanitizeFolderName(title));
       evidences.push({
         type: file.mimetype.startsWith('image/') ? 'IMAGE'
              : file.mimetype.startsWith('audio/') ? 'AUDIO'
@@ -31,9 +53,9 @@ const CaseService = {
              : 'OTHER',
         contentUrl: url
       });
-    }    
-
-    var obj = {
+    }
+  
+    const caseData = {
       data: {
         title,
         description,
@@ -53,11 +75,13 @@ const CaseService = {
         evidences: true,
         caseParticipants: true
       }
-    }
-
-    const createdCase = await prisma.case.create(obj);
-
-    return createdCase;
+    };
+  
+    const createdCase = await prisma.case.create(caseData);
+    return {
+      success: true,
+      data: createdCase
+    };
   },
 
   async list(page = 1, limit = 6, search = '') {
@@ -132,17 +156,36 @@ const CaseService = {
       return { success: false, reason: 'unauthorized', message: "Somente o perito principal pode excluir o caso." };
     }
   
-    await prisma.caseParticipant.deleteMany({
-      where: { caseId }
-    });
+    // 🧹 Remove todos os arquivos da pasta do caso
+    if (isProduction) {
+      const folderName = sanitizeFolderName(existingCase.title);
+      const { data, error } = await supabase
+        .storage
+        .from(process.env.SUPABASE_BUCKET)
+        .list(folderName);
   
-    await prisma.evidence.deleteMany({
-      where: { caseId }
-    });
+      if (data && data.length > 0) {
+        const filesToDelete = data.map(item => `${folderName}/${item.name}`);
+        const { error: deleteError } = await supabase
+          .storage
+          .from(process.env.SUPABASE_BUCKET)
+          .remove(filesToDelete);
   
-    await prisma.case.delete({
-      where: { id: caseId }
-    });
+        if (deleteError) {
+          console.error('Erro ao remover arquivos da pasta:', deleteError);
+        }
+      }
+    } else {
+      for (const evidence of existingCase.evidences) {
+        await removeEvidenceFile(evidence.contentUrl);
+      }
+    }
+  
+    await prisma.$transaction([
+      prisma.caseParticipant.deleteMany({ where: { caseId } }),
+      prisma.evidence.deleteMany({ where: { caseId } }),
+      prisma.case.delete({ where: { id: caseId } })
+    ]);
   
     return { success: true };
   },
@@ -170,24 +213,48 @@ const CaseService = {
     if (existing.status !== 'Em andamento') return { success: false, reason: 'status_locked' };
     if (existing.peritoPrincipalId !== userId) return { success: false, reason: 'unauthorized' };
   
+    // 🔍 Verifica se outro caso já usa esse novo título (exceto o atual)
+    const existingWithTitle = await prisma.case.findFirst({
+      where: {
+        title: {
+          equals: title,
+          mode: 'insensitive'
+        },
+        NOT: { id: caseId }
+      }
+    });
+  
+    if (existingWithTitle) {
+      return {
+        success: false,
+        reason: 'title_exists',
+        message: 'Já existe outro caso com este título.'
+      };
+    }
+  
     const participants = Array.isArray(req.body.participants)
       ? req.body.participants
       : [req.body.participants].filter(Boolean);
   
-    const evidencesToRemove = JSON.parse(req.body.evidencesToRemove || '[]');
+      const evidencesToRemove = Array.isArray(req.body.evidencesToRemove)
+      ? req.body.evidencesToRemove
+      : req.body.evidencesToRemove
+        ? [req.body.evidencesToRemove]
+        : [];
+    
   
-    // Apaga os arquivos físicos
+    // 🧹 Remove arquivos antigos selecionados
     for (let id of evidencesToRemove) {
       const evidence = existing.evidences.find(e => e.id === id);
       if (evidence) {
-        const filePath = path.join(__dirname, '..', evidence.contentUrl);
-        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+        await removeEvidenceFile(evidence.contentUrl);
       }
     }
   
+    // 📤 Upload de novas evidências na pasta do novo título
     const newEvidences = [];
     for (let file of req.files || []) {
-      const url = await storeFile(file, title);
+      const url = await uploadEvidence(file, sanitizeFolderName(title)); 
       newEvidences.push({
         type: file.mimetype.startsWith('image/') ? 'IMAGE'
           : file.mimetype.startsWith('audio/') ? 'AUDIO'
@@ -243,6 +310,37 @@ const CaseService = {
       throw new Error('Caso não encontrado');
     }
   
+    const evidencesWithUrls = await Promise.all(
+      caso.evidences.map(async (ev) => {
+        if (isProduction) {
+          // 🔐 Gera URL assinada no Supabase
+          const { data, error } = await supabase
+            .storage
+            .from(process.env.SUPABASE_BUCKET)
+            .createSignedUrl(ev.contentUrl, 60 * 60); // 1h
+  
+          if (error) {
+            console.error(`Erro ao gerar URL da evidência ID ${ev.id}:`, error);
+          }
+  
+          return {
+            id: ev.id,
+            type: ev.type,
+            contentUrl: ev.contentUrl,
+            signedUrl: data?.signedUrl ?? null
+          };
+        } else {
+          // 💻 Ambiente local — usa o path direto
+          return {
+            id: ev.id,
+            type: ev.type,
+            contentUrl: ev.contentUrl,
+            signedUrl: ev.contentUrl // já é o path acessível pelo frontend (ex: /uploads/evidences/...)
+          };
+        }
+      })
+    );
+  
     return {
       id: caso.id,
       title: caso.title,
@@ -253,12 +351,8 @@ const CaseService = {
       closedAt: caso.closedAt ? caso.closedAt.toISOString().split('T')[0] : null,
       peritoPrincipalId: caso.peritoPrincipal?.id ?? '',
       participants: caso.caseParticipants.map(cp => cp.user.id),
-      existingEvidences: caso.evidences.map(ev => ({
-        id: ev.id,
-        type: ev.type,
-        contentUrl: ev.contentUrl
-      })),
-      newEvidences: [] 
+      existingEvidences: evidencesWithUrls,
+      newEvidences: []
     };
   }
   

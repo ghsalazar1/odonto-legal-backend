@@ -14,6 +14,10 @@ const options = {
         url: 'http://localhost:3000',
         description: 'Servidor local',
       },
+      {
+        url: 'https://odonto-legal-backend-x0x2.onrender.com',
+        description: 'Servidor de produção',
+      },
     ],
     components: {
       securitySchemes: {
