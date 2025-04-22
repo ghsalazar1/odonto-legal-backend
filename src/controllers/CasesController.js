@@ -1,5 +1,5 @@
 const CasesService = require('../services/CasesService');
-const { validateCaseCreation } = require('../utils/caseValidations');
+const { validateCaseCreation, validateCaseEdit } = require('../utils/caseValidations');
 const { successResponse, errorResponse } = require('../utils/responseHelper');
 
 const CasesController = {
@@ -11,8 +11,13 @@ const CasesController = {
         return errorResponse(res, validator?.message ?? 'Erro ao tentar criar um novo caso', 400, { message: validator?.message });
       }
 
-      const caseData = await CasesService.createCase(req);
-      return successResponse(res, 'Caso criado com sucesso', 201, caseData)
+      const response = await CasesService.createCase(req);
+      if(response.success){
+        return successResponse(res, 'Caso criado com sucesso', 201, response.data)
+      }
+      else{
+        errorResponse(res, response.message ?? 'Não foi possível criar o caso.', 400, response)
+      }
     } catch (err) {
       const _message = err?.message ?? 'Erro interno no servidor';
       return errorResponse(res, _message, 500, { message: _message });
@@ -58,7 +63,7 @@ const CasesController = {
       const caseId = req.params.id;
       const userId = req.user?.id;
   
-      const validator = await validateCaseCreation(req);
+      const validator = await validateCaseEdit(req);
       if (!validator.isValid) {
         return errorResponse(res, validator.message || 'Dados inválidos para edição.', 400);
       }

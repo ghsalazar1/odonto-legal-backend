@@ -18,6 +18,8 @@ model User {
   casesAsPerito         Case[]   @relation("PeritoPrincipal")
   caseParticipants      CaseParticipant[]
 
+  avatar              String?
+
   refreshToken          String?
   refreshTokenLastUsed  DateTime?
   refreshTokenCreatedAt DateTime?
@@ -33,14 +35,12 @@ model Role {
 
 model Case {
   id                  String             @id @default(auto()) @map("_id") @db.ObjectId
-  title               String
+  title               String             @unique
   description         String
   status              String             // "Em andamento", "Finalizado", "Arquivado"
   caseDate            DateTime
   openedAt            DateTime           @default(now())
   closedAt            DateTime?
-
-  avatar              String?
 
   peritoPrincipalId   String
   peritoPrincipal     User               @relation("PeritoPrincipal", fields: [peritoPrincipalId], references: [id])

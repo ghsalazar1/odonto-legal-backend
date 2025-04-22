@@ -9,15 +9,16 @@ const casesRoutes = require('./routes/cases.routes');
 const initAdminMiddleware = require('./middlewares/initAdminMiddleware');
 const setupSwagger = require('./utils/swagger');
 
+dotenv.config();
+
+const app = express();
+
+// 🔓 Origens permitidas (para CORS)
 const allowedOrigins = [
   'http://localhost:4200',
   'http://localhost:3000',
   'https://odonto-legal.netlify.app',
 ];
-
-dotenv.config();
-
-const app = express();
 
 // -------------------------------
 // 🛡️ Middlewares globais
@@ -26,43 +27,50 @@ const app = express();
 app.use(express.json());
 app.use(cookieParser());
 
+// Middleware de CORS com log
 app.use(cors({
-  origin: function (origin, callback) {
-    if (!origin) return callback(null, true);
+  origin: (origin, callback) => {
+    console.log('[CORS] Origin da requisição:', origin);
 
-    if (allowedOrigins.some(o =>
-      typeof o === 'string' ? o === origin : o.test(origin)
-    )) {
+    if (!origin || allowedOrigins.includes(origin)) {
       return callback(null, true);
     }
 
-    callback(new Error('Not allowed by CORS'));
+    callback(new Error(`CORS não permitido para a origem: ${origin}`));
   },
   credentials: true,
 }));
+
 // -------------------------------
-// 📄 Swagger Docs
+// 📚 Documentação Swagger
 // -------------------------------
 setupSwagger(app);
 
 // -------------------------------
-// 📁 Arquivos estáticos (ex: uploads)
+// 📁 Arquivos estáticos
 // -------------------------------
 app.use(express.static(path.join(__dirname, 'public')));
+
+// -------------------------------
+// 🧪 Healthcheck
+// -------------------------------
+app.get('/ping', (req, res) => {
+  res.send('pong');
+});
 
 // -------------------------------
 // 🚀 Inicialização de admin e roles
 // -------------------------------
 initAdminMiddleware()
   .then(() => {
-    console.log('Admin e roles carregados com sucesso.');
+    console.log('✅ Admin e roles carregados com sucesso.');
   })
   .catch((err) => {
-    console.error('Erro ao inicializar admin/roles:', err);
+    console.error('❌ Erro ao inicializar admin/roles:', err);
   });
 
 // -------------------------------
-// 🌐 Rotas
+// 🌐 Rotas da API
 // -------------------------------
 app.get('/', (req, res) => {
   res.send('🚀 Bem-vindo à API Odonto Legal!');
@@ -73,9 +81,9 @@ app.use('/users', userRoutes);
 app.use('/cases', casesRoutes);
 
 // -------------------------------
-// ❓ Rota não encontrada
+// 🕵️ Rota não encontrada
 // -------------------------------
-app.use((req, res, next) => {
+app.use((req, res) => {
   res.status(404).json({ error: 'Rota não encontrada' });
 });
 
@@ -92,6 +100,6 @@ app.use((err, req, res, next) => {
 // -------------------------------
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`✅ Servidor rodando: http://localhost:${PORT}`);
-  console.log(`📚 Swagger: http://localhost:${PORT}/api-docs`);
+  console.log(`✅ Servidor rodando:na porta ${PORT}`);
+  console.log(`📚 Swagger => /api-docs`);
 });
