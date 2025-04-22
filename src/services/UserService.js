@@ -51,7 +51,7 @@ async function getAll() {
 async function createUser({ name, email, password, roleId }) {
   // Verifica se já existe um usuário ativo com o mesmo e-mail
   const userExists = await prisma.user.findFirst({
-    where: { email, isActive: true },
+    where: { email, isActivep: true },
   });
 
   if (userExists) {
@@ -152,6 +152,15 @@ async function updateUser(id, data) {
   return updatedUser;
 }
 
+async function isAdminRole(roleId) {
+  const role = await prisma.role.findUnique({
+    where: { id: roleId },
+    select: { description: true }
+  });
+
+  return role?.description.toLowerCase() === 'administrador';
+}
+
 
 module.exports = {
   listUsers,
@@ -159,5 +168,6 @@ module.exports = {
   deleteUser,
   getUserById,
   updateUser,
-  getAll
+  getAll,
+  isAdminRole
 };
