@@ -4,7 +4,7 @@ const CasesController = require('../controllers/CasesController');
 const multer = require('multer');
 const authMiddleware = require('../middlewares/authMiddleware');
 
-const upload = multer({ limits: { fileSize: 1024 * 900 } }); // Limite de ~900kb por arquivo
+const upload = multer({ limits: { fileSize: 1024 * 1536 } }); // Limite de ~1.5mbkb por arquivo
 
 /**
  * @swagger
