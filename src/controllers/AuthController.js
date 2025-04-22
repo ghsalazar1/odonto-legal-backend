@@ -1,7 +1,10 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const AuthService = require('../services/AuthService');
+const UserService = require('../services/UserService');
+const { successResponse, errorResponse } = require('../utils/responseHelper');
 require('dotenv').config();
+
 
 module.exports = {
   async login(req, res) {
@@ -25,6 +28,22 @@ module.exports = {
     });
 
     res.json({ accessToken });
+  },
+
+  // Esta rota vem de fora (sem token) / não é permitido cadastrar Admin
+  async newUsers(req, res) {
+    try {
+      const isAdmin = await UserService.isAdminRole(req.body.roleId);
+      if (isAdmin) {
+        return errorResponse(res, 'Usuários com perfil de administrador não podem ser cadastrados por esta rota.', 403);
+      }
+
+      const user = await UserService.createUser(req.body);
+      return successResponse(res, 'Usuário criado com sucesso', 201, user);
+    } catch (err) {
+      console.error('Erro ao criar usuário:', err);
+      return errorResponse(res, err?.message ?? 'erro ao criar o usuário', );
+    }
   },
 
   async refreshToken(req, res) {
