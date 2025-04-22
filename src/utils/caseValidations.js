@@ -38,8 +38,8 @@ const validateCaseCreation = (req) => {
   }
 
   for (const file of evidences) {
-    if (file.size > 900 * 1024) {
-      return { isValid: false, message: `O arquivo "${file.originalname}" excede o tamanho máximo permitido de 900KB.` };
+    if (file.size > 1536 * 1024) {
+      return { isValid: false, message: `O arquivo "${file.originalname}" excede o tamanho máximo permitido de 1.5mb.` };
     }
   }
 
@@ -87,8 +87,8 @@ const validateCaseEdit = (req) => {
   }
 
   for (const file of evidences) {
-    if (file.size > 900 * 1024) {
-      return { isValid: false, message: `O arquivo "${file.originalname}" excede o tamanho máximo permitido de 900KB.` };
+    if (file.size > 1536 * 1024) {
+      return { isValid: false, message: `O arquivo "${file.originalname}" excede o tamanho máximo permitido de 1.5mb.` };
     }
   }
 
