@@ -31,6 +31,7 @@ async function checkAdmin() {
           password: hashedPassword,
           forgotPasswordToken: "",
           roleId: "1",
+          avatar: "",
           isActive: true
         },
       });
