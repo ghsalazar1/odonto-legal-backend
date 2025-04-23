@@ -40,14 +40,14 @@ async function generatePdfBuffer(caseData, summary, notes) {
   y += 5;
   doc.setFontSize(12);
   doc.text('Resumo do Caso:', 10, y);
-  y = wrapText(doc, summary, 10, y + 5, 180);
+  y = wrapText(doc, caseData?.report?.summary ?? summary, 10, y + 5, 180);
 
   y += 5;
   doc.text('Observações do Perito:', 10, y);
-  y = wrapText(doc, notes, 10, y + 5, 180);
+  y = wrapText(doc, caseData?.report?.notes ?? notes, 10, y + 5, 180);
 
-  // Adiciona evidências
-  if (caseData.existingEvidences && caseData.existingEvidences.length > 0) {
+  // Evidências
+  if (caseData.existingEvidences?.length > 0) {
     y += 10;
     doc.setFontSize(12);
     doc.text('Evidências:', 10, y);
@@ -70,30 +70,42 @@ async function generatePdfBuffer(caseData, summary, notes) {
           const imageData = await loadImageBuffer(ev.signedUrl);
           doc.addImage(imageData, 'JPEG', 10, y, 80, 60);
           y += 65;
-        } catch (err) {
+        } catch {
           doc.text('Erro ao carregar imagem', 10, y);
           y += 6;
         }
       } else {
-        // Outros tipos: AUDIO, DOCUMENT, PDF, OTHER
+        // Outros tipos
         const label =
           ev.type === 'AUDIO' ? 'Áudio'
           : ev.type === 'DOCUMENT' ? 'Documento Word'
           : ev.type === 'PDF' ? 'Documento PDF'
           : 'Outro';
 
+        const fullUrl = ev.signedUrl || ev.contentUrl;
+        const wrappedUrl = doc.splitTextToSize(fullUrl, 180);
+
         doc.text(`${label} disponível em:`, 10, y);
         y += 6;
+
         doc.setTextColor(0, 0, 255);
-        doc.textWithLink(ev.signedUrl || ev.contentUrl, 10, y, { url: ev.signedUrl || ev.contentUrl });
+        doc.textWithLink(wrappedUrl[0], 10, y, { url: fullUrl });
+        y += 6;
+
+        for (let i = 1; i < wrappedUrl.length; i++) {
+          doc.text(wrappedUrl[i], 10, y);
+          y += 6;
+        }
         doc.setTextColor(0, 0, 0);
-        y += 10;
       }
+
+      y += 5;
     }
   }
 
   return doc.output('arraybuffer');
 }
+
 
 module.exports = {
   async finalizeCaseAndGenerateDossier(caseId, summary, notes) {
@@ -138,5 +150,58 @@ module.exports = {
 
       return { success: true, contentUrl: uploadPath };
     }
+  },
+  async getAll() {
+    const reports = await prisma.report.findMany({
+      include: {
+        case: {
+          include: {
+            evidences: true,
+            peritoPrincipal: {
+              select: { id: true, name: true }
+            },
+            caseParticipants: {
+              include: {
+                user: {
+                  select: { id: true, name: true }
+                }
+              }
+            }
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    const formatted = await Promise.all(reports.map(async (report) => {
+      const caseInfo = report.case;
+      const folderName = sanitizeFolderName(caseInfo.title);
+      const fileName = report.contentUrl;
+      let finalUrl = null;
+
+      if (isProduction) {
+        const { data, error } = await supabase.storage
+          .from(process.env.SUPABASE_REPORT_BUCKET)
+          .createSignedUrl(fileName, 3600);
+        finalUrl = data?.signedUrl || null;
+      } else {
+        finalUrl = path.join(__dirname, '..', 'uploads', 'dossiers', folderName, path.basename(fileName));
+        if (!fs.existsSync(finalUrl)) finalUrl = null;
+      }
+
+      return {
+        id: report.id,
+        caseTitle: caseInfo.title,
+        summary: report.summary,
+        notes: report.notes,
+        contentUrl: finalUrl,
+        createdAt: report.createdAt,
+        evidenceCount: caseInfo.evidences.length,
+        peritoPrincipal: caseInfo.peritoPrincipal?.name,
+        participants: caseInfo.caseParticipants.map(cp => cp.user.name)
+      };
+    }));
+
+    return formatted;
   }
 };
