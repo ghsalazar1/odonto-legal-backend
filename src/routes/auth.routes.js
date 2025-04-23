@@ -42,33 +42,6 @@ router.post('/login', AuthController.login);
 
 /**
  * @swagger
- * /auth/new-users:
- *   post:
- *     summary: Registra novos usuários do lado de fora da plataforma (sem token)
- *     tags: [Auth]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
-*           schema:
- *             type: object
- *             properties:
- *               name:
- *                 type: string
- *               email:
- *                 type: string
- *               password:
- *                 type: string
- *               roleId:
- *                 type: string
- *     responses:
- *       200:
- *         description: Usuário criado com sucesso
- */
-router.post('/new-users', AuthController.newUsers);
-
-/**
- * @swagger
  * /auth/refresh:
  *   post:
  *     summary: Renova o token de acesso usando o refresh token

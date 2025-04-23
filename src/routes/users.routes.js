@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const userController = require('../controllers/UsersController');
 const authMiddleware = require('../middlewares/authMiddleware');
+const { isAdminRole } = require('../services/UserService');
+const isAdminMiddleware = require('../middlewares/isAdminMiddleware');
 
 /**
  * @swagger
@@ -94,7 +96,7 @@ router.get('/getAll', authMiddleware, userController.getAll);
  *       400:
  *         description: Erro na requisição
  */
-router.post('/', authMiddleware, userController.create);
+router.post('/', authMiddleware, isAdminMiddleware, userController.create);
 
 /**
  * @swagger
@@ -117,7 +119,7 @@ router.post('/', authMiddleware, userController.create);
  *       500:
  *         description: Erro interno no servidor
  */
-router.delete('/:id', authMiddleware, userController.delete);
+router.delete('/:id', authMiddleware, isAdminMiddleware, userController.delete);
 
 /**
  * @swagger
@@ -141,39 +143,42 @@ router.delete('/:id', authMiddleware, userController.delete);
 router.get('/:id', authMiddleware, userController.getById);
 
 /**
- * @swagger
- * /users/{id}:
- *   put:
- *     summary: Atualiza um usuário pelo ID
- *     tags: [Usuários]
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *         description: ID do usuário
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               name:
- *                 type: string
- *               email:
- *                 type: string
- *               password:
- *                 type: string
- *               roleId:
- *                 type: string
- *     responses:
- *       200:
- *         description: Usuário atualizado com sucesso
- *       404:
- *         description: Usuário não encontrado
- */
-router.put('/:id', authMiddleware, userController.update);
+* @swagger
+* /users/{id}:
+*   put:
+*     summary: Atualiza um usuário pelo ID
+*     tags: [Usuários]
+*     security:              # ⬅️ Adicionado
+*       - bearerAuth: []     # ⬅️ Adicionado
+*     parameters:
+*       - in: path
+*         name: id
+*         required: true
+*         schema:
+*           type: string
+*         description: ID do usuário
+*     requestBody:
+*       required: true
+*       content:
+*         application/json:
+*           schema:
+*             type: object
+*             properties:
+*               name:
+*                 type: string
+*               email:
+*                 type: string
+*               password:
+*                 type: string
+*               roleId:
+*                 type: string
+*     responses:
+*       200:
+*         description: Usuário atualizado com sucesso
+*       404:
+*         description: Usuário não encontrado
+*/
+router.put('/:id', authMiddleware, isAdminMiddleware, userController.update);
+
 
 module.exports = router;

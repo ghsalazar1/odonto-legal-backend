@@ -211,7 +211,19 @@ const CaseService = {
   
     if (!existing) return { success: false, reason: 'not_found' };
     if (existing.status !== 'Em andamento') return { success: false, reason: 'status_locked' };
-    if (existing.peritoPrincipalId !== userId) return { success: false, reason: 'unauthorized' };
+
+    var isParticipant = existing.peritoPrincipalId == userId;
+    if(!isParticipant){
+      existing.caseParticipants.forEach(participant => {
+        if(participant?.userId == userId){
+          isParticipant = true;
+        }
+      });
+
+      if(!isParticipant){
+        return { success: false, reason: 'unauthorized' };
+      }
+    }
   
     // 🔍 Verifica se outro caso já usa esse novo título (exceto o atual)
     const existingWithTitle = await prisma.case.findFirst({
