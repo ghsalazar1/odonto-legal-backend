@@ -1,6 +1,7 @@
 const bcrypt = require('bcryptjs');
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
+require('dotenv').config();
 
 module.exports = async () => {
   try {
@@ -10,6 +11,7 @@ module.exports = async () => {
     // Verifica e cria admin
     await checkAdmin();
 
+
   } catch (err) {
     console.error('Erro no middleware de inicialização:', err);
     throw err; 
@@ -18,15 +20,19 @@ module.exports = async () => {
 
 async function checkAdmin() {
     // Verifica e cria admin
+
+    const _adminUser = process.env.ADMIN_USER;
+    const _adminPassword = process.env.ADMIN_PASSWORD;
+
     const adminExists = await prisma.user.findFirst({
-      where: { email: 'admin' },
+      where: { email: _adminUser },
     });
 
     if (!adminExists) {
-      const hashedPassword = await bcrypt.hash('admin', 10);
+      const hashedPassword = await bcrypt.hash(_adminPassword, 10);
       await prisma.user.create({
         data: {
-          email: 'admin',
+          email: _adminUser,
           name: 'Administrador',
           password: hashedPassword,
           forgotPasswordToken: "",

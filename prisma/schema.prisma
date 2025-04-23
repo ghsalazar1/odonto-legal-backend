@@ -47,6 +47,19 @@ model Case {
 
   evidences           Evidence[]
   caseParticipants    CaseParticipant[]
+
+  report              Report?            @relation("CaseReport") 
+}
+
+model Report {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  caseId      String   @unique
+  case        Case     @relation("CaseReport", fields: [caseId], references: [id])
+  summary     String   // Resumo do caso
+  notes       String   // Observações do perito
+  contentUrl  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model CaseParticipant {
@@ -74,4 +87,5 @@ enum EvidenceType {
   DOCUMENT
   TEXT
   OTHER
+  PDF
 }

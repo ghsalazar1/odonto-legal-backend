@@ -92,7 +92,30 @@ const CasesController = {
       console.error('[ERRO AO BUSCAR CASO POR ID]', error);
       return errorResponse(res, error.message || 'Erro ao buscar caso', 500);
     }
-  } 
+  },
+  async finalize(req, res) {
+    try {
+      const { id } = req.params;
+      const { summary, notes } = req.body;
+      const userId = req.user?.id;
+  
+      if (!summary || !notes) {
+        return errorResponse(res, 'Resumo e notas são obrigatórios.', 400);
+      }
+  
+      const result = await CasesService.finalizeCase(id, userId, { summary, notes });
+  
+      if (!result.success) {
+        const status = result.reason === 'not_found' ? 404 : 400;
+        return errorResponse(res, result.message, status);
+      }
+  
+      return successResponse(res, 'Caso finalizado e dossiê gerado com sucesso.', 200, result.data);
+    } catch (error) {
+      console.error('[ERRO AO FINALIZAR CASO]', error);
+      return errorResponse(res, 'Erro interno ao finalizar o caso.', 500);
+    }
+  }
 
   
 };

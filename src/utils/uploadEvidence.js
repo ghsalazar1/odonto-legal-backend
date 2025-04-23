@@ -27,7 +27,7 @@ async function uploadEvidence(file, caseTitle) {
     // 📤 Envio para Supabase com pasta por título
     const { error } = await supabase
       .storage
-      .from(process.env.SUPABASE_BUCKET)
+      .from(process.env.SUPABASE_EVIDENCE_BUCKET)
       .upload(storagePath, file.buffer, {
         contentType: file.mimetype,
         upsert: true
@@ -57,7 +57,7 @@ async function removeEvidenceFile(filePathOrUrl) {
     const bucketPathParts = filePathOrUrl.split('/');
     const folderAndFile = bucketPathParts.slice(-2).join('/'); // pasta/arquivo
     const { error } = await supabase.storage
-      .from(process.env.SUPABASE_BUCKET)
+      .from(process.env.SUPABASE_EVIDENCE_BUCKET)
       .remove([folderAndFile]);
 
     if (error) {

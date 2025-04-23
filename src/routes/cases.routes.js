@@ -206,5 +206,45 @@ router.put('/:id', upload.any(), authMiddleware, CasesController.update);
  */
 router.get('/:id', authMiddleware, CasesController.getById);
 
+/**
+ * @swagger
+ * /cases/{id}/finalize:
+ *   post:
+ *     summary: Finaliza um caso pericial e gera um relatório (dossiê)
+ *     tags: [Casos]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: ID do caso a ser finalizado
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - summary
+ *               - notes
+ *             properties:
+ *               summary:
+ *                 type: string
+ *                 example: Resumo do caso...
+ *               notes:
+ *                 type: string
+ *                 example: Observações do perito...
+ *     responses:
+ *       200:
+ *         description: Caso finalizado e relatório criado
+ *       404:
+ *         description: Caso não encontrado
+ *       400:
+ *         description: Caso já está finalizado ou arquivado
+ *       500:
+ *         description: Erro no servidor
+ */
+router.put('/:id/finalize', authMiddleware, CasesController.finalize);
 
 module.exports = router;

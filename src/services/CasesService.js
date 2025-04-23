@@ -3,6 +3,7 @@ const prisma = new PrismaClient();
 const { uploadEvidence, removeEvidenceFile } = require('../utils/uploadEvidence');
 const { sanitizeFolderName } = require('../utils/helpers'); 
 const { createClient } = require('@supabase/supabase-js');
+const ReportService = require('../services/ReportService');
 require('dotenv').config();
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
@@ -49,7 +50,8 @@ const CaseService = {
       evidences.push({
         type: file.mimetype.startsWith('image/') ? 'IMAGE'
              : file.mimetype.startsWith('audio/') ? 'AUDIO'
-             : file.mimetype === 'application/pdf' ? 'DOCUMENT'
+             : file.mimetype === 'application/pdf' ? 'PDF'
+             : file.mimetype === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ? 'DOCUMENT'
              : 'OTHER',
         contentUrl: url
       });
@@ -83,7 +85,6 @@ const CaseService = {
       data: createdCase
     };
   },
-
   async list(page = 1, limit = 6, search = '') {
     const skip = (page - 1) * limit;
 
@@ -161,14 +162,14 @@ const CaseService = {
       const folderName = sanitizeFolderName(existingCase.title);
       const { data, error } = await supabase
         .storage
-        .from(process.env.SUPABASE_BUCKET)
+        .from(process.env.SUPABASE_EVIDENCE_BUCKET)
         .list(folderName);
   
       if (data && data.length > 0) {
         const filesToDelete = data.map(item => `${folderName}/${item.name}`);
         const { error: deleteError } = await supabase
           .storage
-          .from(process.env.SUPABASE_BUCKET)
+          .from(process.env.SUPABASE_EVIDENCE_BUCKET)
           .remove(filesToDelete);
   
         if (deleteError) {
@@ -189,7 +190,6 @@ const CaseService = {
   
     return { success: true };
   },
-
   async updateCase(req, caseId, userId) {
     const {
       title,
@@ -270,7 +270,7 @@ const CaseService = {
       newEvidences.push({
         type: file.mimetype.startsWith('image/') ? 'IMAGE'
           : file.mimetype.startsWith('audio/') ? 'AUDIO'
-          : file.mimetype === 'application/pdf' ? 'DOCUMENT'
+          : file.mimetype === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ? 'DOCUMENT'
           : 'OTHER',
         contentUrl: url
       });
@@ -298,8 +298,7 @@ const CaseService = {
     ]);
   
     return { success: true };
-  },
-  
+  },  
   async getById(caseId) {
     const caso = await prisma.case.findUnique({
       where: { id: caseId },
@@ -348,7 +347,7 @@ const CaseService = {
           // 🔐 Gera URL assinada no Supabase
           const { data, error } = await supabase
             .storage
-            .from(process.env.SUPABASE_BUCKET)
+            .from(process.env.SUPABASE_EVIDENCE_BUCKET)
             .createSignedUrl(ev.contentUrl, 60 * 60); // 1h
   
           if (error) {
@@ -397,7 +396,43 @@ const CaseService = {
       newEvidences: []
     };
     
+  },
+  async finalizeCase(caseId, userId, { summary, notes }) {
+    const existingCase = await prisma.case.findUnique({ where: { id: caseId } });
+  
+    if (!existingCase) return { success: false, reason: 'not_found', message: 'Caso não encontrado.' };
+    if (existingCase.status !== 'Em andamento') return { success: false, message: 'Apenas casos em andamento podem ter o dossiê gerado.' };
+    if (existingCase.peritoPrincipalId !== userId) return { success: false, message: 'Apenas o perito principal pode finalizar o caso.' };
+  
+    const now = new Date();
+    const _report = await ReportService.finalizeCaseAndGenerateDossier(caseId, summary, notes);
+
+    if(_report?.success){
+      const contentUrl = _report?.contentUrl;
+      const updated = await prisma.case.update({
+        where: { id: caseId },
+        data: {
+          status: 'Finalizado',
+          closedAt: now,
+          report: {
+            create: {
+              summary,
+              notes,
+              contentUrl
+            }
+          }
+        },
+        include: { report: true }
+      });
+
+      return { success: true, data: updated };
+
+    }
+    else{
+      throw new Error(_report?.message ?? 'Não foi possível gerar o pdf do caso.');
+    }
   }
+  
   
 };
 
