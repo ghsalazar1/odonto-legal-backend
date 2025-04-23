@@ -7,7 +7,7 @@ const prisma = new PrismaClient();
 module.exports = {
   generateAccessToken(user) {
     return jwt.sign(
-      { id: user.id, email: user.email, role: user.role?.description },
+      { id: user.id, email: user.email, roleId: user?.roleId, role: user?.role?.description },
       process.env.JWT_SECRET,
       { expiresIn: '1h' }
     );
@@ -22,10 +22,14 @@ module.exports = {
   },
 
   async getUserByEmail(email) {
-    return prisma.user.findUnique({ where: { email } });
+    return prisma.user.findUnique({ where: { email }, include: {
+      role: true
+    } });
   },
 
   async getUserById(id) {
-    return prisma.user.findUnique({ where: { id } });
+    return prisma.user.findUnique({ where: { id }, include: {
+      role: true
+    } });
   }
 };

@@ -73,7 +73,7 @@ const CasesController = {
       if (!result.success) {
         if (result.reason === 'not_found') return errorResponse(res, 'Caso não encontrado', 404);
         if (result.reason === 'status_locked') return errorResponse(res, 'Somente casos em andamento podem ser editados.', 400);
-        if (result.reason === 'unauthorized') return errorResponse(res, 'Somente o perito principal pode editar o caso.', 403);
+        if (result.reason === 'unauthorized') return errorResponse(res, 'Somente o perito principal e os participantes podem editar o caso.', 403);
         return errorResponse(res, 'Erro ao editar o caso.', 500);
       }
   

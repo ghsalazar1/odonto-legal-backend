@@ -51,7 +51,7 @@ async function getAll() {
 async function createUser({ name, email, password, roleId }) {
   // Verifica se já existe um usuário ativo com o mesmo e-mail
   const userExists = await prisma.user.findFirst({
-    where: { email, isActivep: true },
+    where: { email },
   });
 
   if (userExists) {

@@ -27,7 +27,7 @@ module.exports = {
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
-    res.json({ accessToken });
+    res.json({ accessToken, user });
   },
 
   // Esta rota vem de fora (sem token) / não é permitido cadastrar Admin
