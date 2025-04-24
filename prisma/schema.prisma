@@ -41,12 +41,15 @@ model Case {
   caseDate            DateTime
   openedAt            DateTime           @default(now())
   closedAt            DateTime?
+  archivedAt          DateTime?
 
   peritoPrincipalId   String
   peritoPrincipal     User               @relation("PeritoPrincipal", fields: [peritoPrincipalId], references: [id])
 
   evidences           Evidence[]
   caseParticipants    CaseParticipant[]
+
+  archiveReason       String?
 
   report              Report?            @relation("CaseReport") 
 }

@@ -247,4 +247,40 @@ router.get('/:id', authMiddleware, CasesController.getById);
  */
 router.put('/:id/finalize', authMiddleware, CasesController.finalize);
 
+/**
+ * @swagger
+ * /cases/{id}/archive:
+ *   put:
+ *     summary: Arquiva um caso pericial
+ *     tags: [Casos]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: ID do caso a ser arquivado
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: false
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               reason:
+ *                 type: string
+ *                 example: Caso encerrado por falta de evidências.
+ *     responses:
+ *       200:
+ *         description: Caso arquivado com sucesso
+ *       404:
+ *         description: Caso não encontrado
+ *       400:
+ *         description: O caso não pode ser arquivado
+ *       500:
+ *         description: Erro no servidor
+ */
+router.put('/:id/archive', authMiddleware, CasesController.archive);
+
+
 module.exports = router;

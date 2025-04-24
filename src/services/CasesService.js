@@ -431,8 +431,34 @@ const CaseService = {
     else{
       throw new Error(_report?.message ?? 'Não foi possível gerar o pdf do caso.');
     }
-  }
+  },
   
+  async archiveCase(caseId, userId, reason = '') {
+    const existing = await prisma.case.findUnique({
+      where: { id: caseId }
+    });
+
+    if (!existing) return { success: false, reason: 'not_found' };
+
+    if (existing.status !== 'Em andamento') {
+      return { success: false, reason: 'already_finalized' };
+    }
+
+    if (existing.peritoPrincipalId !== userId) {
+      return { success: false, reason: 'unauthorized' };
+    }
+
+    await prisma.case.update({
+      where: { id: caseId },
+      data: {
+        status: 'Arquivado',
+        archivedAt: new Date(),
+        archiveReason: reason
+      }
+    });
+
+    return { success: true };
+  } 
   
 };
 

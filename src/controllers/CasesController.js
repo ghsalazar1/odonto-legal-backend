@@ -115,6 +115,27 @@ const CasesController = {
       console.error('[ERRO AO FINALIZAR CASO]', error);
       return errorResponse(res, 'Erro interno ao finalizar o caso.', 500);
     }
+  },
+  async archive(req, res) {
+    try {
+      const { id } = req.params;
+      const { reason } = req.body;
+      const userId = req.user?.id;
+  
+      const result = await CasesService.archiveCase(id, userId, reason);
+  
+      if (!result.success) {
+        if (result.reason === 'not_found') return errorResponse(res, 'Caso não encontrado', 404);
+        if (result.reason === 'already_finalized') return errorResponse(res, 'Caso já está finalizado ou arquivado.', 400);
+        if (result.reason === 'unauthorized') return errorResponse(res, 'Somente o perito principal pode arquivar.', 403);
+        return errorResponse(res, 'Erro ao arquivar caso.', 500);
+      }
+  
+      return successResponse(res, 'Caso arquivado com sucesso');
+    } catch (error) {
+      console.error('[ERRO AO ARQUIVAR CASO]', error);
+      return errorResponse(res, 'Erro interno ao arquivar o caso');
+    }
   }
 
   
