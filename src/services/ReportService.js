@@ -191,17 +191,18 @@ module.exports = {
 
       return {
         id: report.id,
-        caseTitle: caseInfo.title,
+        title: caseInfo.title,
         summary: report.summary,
+        case: report.case,
         notes: report.notes,
         contentUrl: finalUrl,
         createdAt: report.createdAt,
-        evidenceCount: caseInfo.evidences.length,
+        evidencesCount: caseInfo.evidences.length,
         peritoPrincipal: caseInfo.peritoPrincipal?.name,
-        participants: caseInfo.caseParticipants.map(cp => cp.user.name)
+        caseParticipants: caseInfo.caseParticipants.map(cp => cp.user.name)
       };
     }));
 
-    return formatted;
+    return { success: true, data: formatted };
   }
 };
