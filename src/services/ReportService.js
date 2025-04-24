@@ -127,15 +127,14 @@ module.exports = {
     const timestamp = Date.now();
     const folderName = sanitizeFolderName(caseFullData.title);
     const fileName = `${caseId}-${timestamp}.pdf`;
+    const uploadPath = `dossiers/${folderName}/${fileName}`;
 
     if (!isProduction) {
       const filePath = path.join(__dirname, '..', 'uploads', 'dossiers', folderName, fileName);
       fs.mkdirSync(path.dirname(filePath), { recursive: true });
       fs.writeFileSync(filePath, Buffer.from(pdfBuffer));
-      return { success: true, contentUrl: filePath };
+      return { success: true, contentUrl: uploadPath };
     } else {
-      const uploadPath = `dossiers/${folderName}/${fileName}`;
-
       const { error } = await supabase.storage
         .from(process.env.SUPABASE_REPORT_BUCKET)
         .upload(uploadPath, Buffer.from(pdfBuffer), {
@@ -185,8 +184,7 @@ module.exports = {
           .createSignedUrl(fileName, 3600);
         finalUrl = data?.signedUrl || null;
       } else {
-        finalUrl = path.join(__dirname, '..', 'uploads', 'dossiers', folderName, path.basename(fileName));
-        if (!fs.existsSync(finalUrl)) finalUrl = null;
+        finalUrl = report.contentUrl;
       }
 
       return {

@@ -82,6 +82,12 @@ app.use('/users', userRoutes);
 app.use('/cases', casesRoutes);
 app.use('/reports', reportRoutes);
 
+if(process.env.IS_PRODUCTION != 'true'){
+  // Libera a pasta 'uploads' publicamente
+  app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+}
+
 // -------------------------------
 // 🕵️ Rota não encontrada
 // -------------------------------
