@@ -6,6 +6,7 @@ const dotenv = require('dotenv');
 const authRoutes = require('./routes/auth.routes');
 const userRoutes = require('./routes/users.routes');
 const casesRoutes = require('./routes/cases.routes');
+const reportRoutes = require('./routes/report.routes');
 const initAdminMiddleware = require('./middlewares/initAdminMiddleware');
 const setupSwagger = require('./utils/swagger');
 
@@ -79,6 +80,7 @@ app.get('/', (req, res) => {
 app.use('/auth', authRoutes);
 app.use('/users', userRoutes);
 app.use('/cases', casesRoutes);
+app.use('/reports', reportRoutes);
 
 // -------------------------------
 // 🕵️ Rota não encontrada
