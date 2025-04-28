@@ -2,15 +2,30 @@ const express = require('express');
 const router = express.Router();
 const userController = require('../controllers/UsersController');
 const authMiddleware = require('../middlewares/authMiddleware');
-const { isAdminRole } = require('../services/UserService');
 const isAdminMiddleware = require('../middlewares/isAdminMiddleware');
 
 /**
  * @swagger
  * tags:
  *   name: Usuários
- *   description: Endpoints de gerenciamento de usuários
+ *   description: Endpoints de gerenciamento de usuários (apenas Administradores)
  */
+
+/**
+ * @swagger
+ * /users/selectable:
+ *   get:
+ *     summary: Retorna usuários disponíveis para associar a casos
+ *     tags: [Usuários]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Lista de usuários disponíveis
+ *       401:
+ *         description: Não autorizado
+ */
+router.get('/selectable', authMiddleware, userController.getSelectable);
 
 /**
  * @swagger
@@ -25,47 +40,38 @@ const isAdminMiddleware = require('../middlewares/isAdminMiddleware');
  *         name: page
  *         schema:
  *           type: integer
- *           example: 1
  *         description: Número da página
  *       - in: query
  *         name: limit
  *         schema:
  *           type: integer
- *           example: 10
  *         description: Quantidade de itens por página
  *       - in: query
  *         name: search
  *         schema:
  *           type: string
- *           example: "admin"
  *         description: Texto para buscar por nome, email ou perfil
  *     responses:
  *       200:
  *         description: Lista de usuários
- *       401:
- *         description: Não autorizado
+ *       403:
+ *         description: Acesso negado
  */
-
-router.get('/', authMiddleware, userController.list);
-
+router.get('/', authMiddleware, isAdminMiddleware, userController.list);
 
 /**
  * @swagger
  * /users/getAll:
  *   get:
- *     summary: Lista usuários sem paginação e filtro
+ *     summary: Lista todos usuários sem paginação
  *     tags: [Usuários]
- *     security:
- *       - bearerAuth: []
  *     responses:
  *       200:
  *         description: Lista de usuários completa
- *       401:
- *         description: Não autorizado
+ *       403:
+ *         description: Acesso negado
  */
-
-router.get('/getAll', authMiddleware, userController.getAll);
-
+router.get('/getAll', authMiddleware, isAdminMiddleware, userController.getAll);
 
 /**
  * @swagger
@@ -73,8 +79,6 @@ router.get('/getAll', authMiddleware, userController.getAll);
  *   post:
  *     summary: Cria um novo usuário
  *     tags: [Usuários]
- *     security:
- *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -82,44 +86,17 @@ router.get('/getAll', authMiddleware, userController.getAll);
  *           schema:
  *             type: object
  *             properties:
- *               name:
- *                 type: string
- *               email:
- *                 type: string
- *               password:
- *                 type: string
- *               roleId:
- *                 type: string
+ *               name: { type: string }
+ *               email: { type: string }
+ *               password: { type: string }
+ *               roleId: { type: string }
  *     responses:
  *       201:
- *         description: Usuário criado com sucesso
- *       400:
- *         description: Erro na requisição
+ *         description: Usuário criado
+ *       403:
+ *         description: Acesso negado
  */
 router.post('/', authMiddleware, isAdminMiddleware, userController.create);
-
-/**
- * @swagger
- * /users/{id}:
- *   delete:
- *     summary: Remove um usuário pelo ID
- *     tags: [Usuários]
- *     parameters:
- *       - in: path
- *         name: id
- *         schema:
- *           type: string
- *         required: true
- *         description: ID do usuário a ser excluído
- *     responses:
- *       204:
- *         description: Usuário excluído com sucesso
- *       404:
- *         description: Usuário não encontrado
- *       500:
- *         description: Erro interno no servidor
- */
-router.delete('/:id', authMiddleware, isAdminMiddleware, userController.delete);
 
 /**
  * @swagger
@@ -131,54 +108,62 @@ router.delete('/:id', authMiddleware, isAdminMiddleware, userController.delete);
  *       - in: path
  *         name: id
  *         required: true
- *         schema:
- *           type: string
- *         description: ID do usuário
+ *         schema: { type: string }
  *     responses:
  *       200:
- *         description: Dados do usuário retornados com sucesso
- *       404:
- *         description: Usuário não encontrado
+ *         description: Usuário encontrado
+ *       403:
+ *         description: Acesso negado
  */
-router.get('/:id', authMiddleware, userController.getById);
+router.get('/:id', authMiddleware, isAdminMiddleware, userController.getById);
 
 /**
-* @swagger
-* /users/{id}:
-*   put:
-*     summary: Atualiza um usuário pelo ID
-*     tags: [Usuários]
-*     security:              # ⬅️ Adicionado
-*       - bearerAuth: []     # ⬅️ Adicionado
-*     parameters:
-*       - in: path
-*         name: id
-*         required: true
-*         schema:
-*           type: string
-*         description: ID do usuário
-*     requestBody:
-*       required: true
-*       content:
-*         application/json:
-*           schema:
-*             type: object
-*             properties:
-*               name:
-*                 type: string
-*               email:
-*                 type: string
-*               password:
-*                 type: string
-*               roleId:
-*                 type: string
-*     responses:
-*       200:
-*         description: Usuário atualizado com sucesso
-*       404:
-*         description: Usuário não encontrado
-*/
+ * @swagger
+ * /users/{id}:
+ *   put:
+ *     summary: Atualiza um usuário
+ *     tags: [Usuários]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string }
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name: { type: string }
+ *               email: { type: string }
+ *               password: { type: string }
+ *               roleId: { type: string }
+ *     responses:
+ *       200:
+ *         description: Usuário atualizado
+ *       403:
+ *         description: Acesso negado
+ */
 router.put('/:id', authMiddleware, isAdminMiddleware, userController.update);
 
+/**
+ * @swagger
+ * /users/{id}:
+ *   delete:
+ *     summary: Remove um usuário
+ *     tags: [Usuários]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string }
+ *     responses:
+ *       204:
+ *         description: Usuário removido
+ *       403:
+ *         description: Acesso negado
+ */
+router.delete('/:id', authMiddleware, isAdminMiddleware, userController.delete);
 
 module.exports = router;

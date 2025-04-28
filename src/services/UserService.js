@@ -48,6 +48,35 @@ async function getAll() {
   });
 }
 
+async function getSelectableUsers() {
+  const users = await prisma.user.findMany({
+    where: {
+      isActive: true,
+      role: {
+        NOT: {
+          description: 'Administrador'
+        }
+      }
+    },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      role: {
+        select: {
+          description: true
+        }
+      }
+    },
+    orderBy: {
+      name: 'asc'
+    }
+  });
+
+  return users;
+}
+
+
 async function createUser({ name, email, password, roleId }) {
   // Verifica se já existe um usuário ativo com o mesmo e-mail
   const userExists = await prisma.user.findFirst({
@@ -169,5 +198,6 @@ module.exports = {
   getUserById,
   updateUser,
   getAll,
-  isAdminRole
+  isAdminRole,
+  getSelectableUsers
 };

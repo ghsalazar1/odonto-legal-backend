@@ -25,6 +25,15 @@ exports.getAll = async (req, res) => {
   }
 };
 
+exports.getSelectable = async (req, res) => {
+  try {
+    const users = await UserService.getSelectableUsers();
+    return successResponse(res, 'Usuários disponíveis retornados com sucesso', 200, users);
+  } catch (error) {
+    console.error('[ERRO getSelectable]', error);
+    return errorResponse(res, 'Erro ao buscar usuários disponíveis', 500, error);
+  }
+};
 
 exports.create = async (req, res) => {
   try {
