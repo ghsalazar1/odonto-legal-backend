@@ -7,6 +7,7 @@ const authRoutes = require('./routes/auth.routes');
 const userRoutes = require('./routes/users.routes');
 const casesRoutes = require('./routes/cases.routes');
 const reportRoutes = require('./routes/report.routes');
+const dashboardRoutes = require('./routes/dashboard.routes');
 const initAdminMiddleware = require('./middlewares/initAdminMiddleware');
 const setupSwagger = require('./utils/swagger');
 
@@ -77,10 +78,11 @@ app.get('/', (req, res) => {
   res.send('🚀 Bem-vindo à API Odonto Legal!');
 });
 
-app.use('/auth', authRoutes);
-app.use('/users', userRoutes);
-app.use('/cases', casesRoutes);
-app.use('/reports', reportRoutes);
+app.use('/auth', authRoutes); // Autenticação
+app.use('/users', userRoutes); // Usuários
+app.use('/cases', casesRoutes); // Gerenciamento de Casos
+app.use('/reports', reportRoutes); // Relatórios
+app.use('/dashboards', dashboardRoutes); // Painel
 
 if(process.env.IS_PRODUCTION != 'true'){
   // Libera a pasta 'uploads' publicamente

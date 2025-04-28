@@ -23,7 +23,7 @@ async function loadImageBuffer(url) {
   return 'data:image/jpeg;base64,' + base64;
 }
 
-async function generatePdfBuffer(caseData, summary, notes) {
+async function generatePdfBuffer(caseData, summary, notes, status) {
   const doc = new jsPDF();
   let y = 10;
 
@@ -32,7 +32,11 @@ async function generatePdfBuffer(caseData, summary, notes) {
   y += 10;
 
   doc.setFontSize(10);
-  y = wrapText(doc, `Status: ${caseData.status}`, 10, y, 180);
+  y = wrapText(doc, `Descrição: ${caseData?.description ?? ''}`, 10, y, 180);
+
+  y += 10;
+  
+  y = wrapText(doc, `Status: ${status}`, 10, y, 180);
   y = wrapText(doc, `Data do Acontecimento: ${caseData.caseDate}`, 10, y, 180);
   y = wrapText(doc, `Data de Abertura: ${caseData.openedAt}`, 10, y, 180);
   if (caseData.closedAt) y = wrapText(doc, `Data de Fechamento: ${caseData.closedAt}`, 10, y, 180);
@@ -122,7 +126,7 @@ module.exports = {
     if (!caseData.report && (!summary || !notes)) return { success: false, message: 'O caso precisa de resumo e notas do perito.' };
 
     const caseFullData = await require('./CasesService').getById(caseId);
-    const pdfBuffer = await generatePdfBuffer(caseFullData, summary, notes);
+    const pdfBuffer = await generatePdfBuffer(caseFullData, summary, notes, 'Finalizado');
 
     const timestamp = Date.now();
     const folderName = sanitizeFolderName(caseFullData.title);
