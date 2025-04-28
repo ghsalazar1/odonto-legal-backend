@@ -1,12 +1,25 @@
+const { isAdminRole } = require('../services/UserService');
 const { errorResponse } = require('../utils/responseHelper');
 
-module.exports = function isAdminMiddleware(req, res, next) {
-  if (!req.user || req.user.role !== 'Administrador') {
-    return errorResponse(res, 'Acesso restrito à administradores.', 403, {
-      reason: 'forbidden',
-      userRole: req.user?.role || null,
-    });
-  }
+const isAdminMiddleware = async (req, res, next) => {
+  try {
+    const user = req.user;
 
-  next();
+    if (!user || !user.roleId) {
+      return errorResponse(res, 'Usuário não autenticado ou sem perfil', 401);
+    }
+
+    const isAdmin = await isAdminRole(user.roleId);
+
+    if (!isAdmin) {
+      return errorResponse(res, 'Acesso restrito a administradores', 403);
+    }
+
+    next();
+  } catch (error) {
+    console.error('[isAdminMiddleware] Erro:', error);
+    return errorResponse(res, 'Erro ao validar perfil de administrador', 500);
+  }
 };
+
+module.exports = isAdminMiddleware;
