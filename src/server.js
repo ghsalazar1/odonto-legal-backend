@@ -15,6 +15,7 @@ dotenv.config();
 
 const app = express();
 
+
 // -------------------------------
 // 🛡️ Middlewares globais
 // -------------------------------
