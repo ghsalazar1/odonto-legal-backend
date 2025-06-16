@@ -15,33 +15,16 @@ dotenv.config();
 
 const app = express();
 
-// 🔓 Origens permitidas (para CORS)
-const allowedOrigins = [
-  'http://localhost:4200',
-  'http://localhost:3000',
-  'https://odonto-legal.netlify.app',
-];
-
 // -------------------------------
 // 🛡️ Middlewares globais
 // -------------------------------
-
 app.use(express.json());
 app.use(cookieParser());
-
-// Middleware de CORS com log
 app.use(cors({
-  origin: (origin, callback) => {
-    console.log('[CORS] Origin da requisição:', origin);
-
-    if (!origin || allowedOrigins.includes(origin)) {
-      return callback(null, true);
-    }
-
-    callback(new Error(`CORS não permitido para a origem: ${origin}`));
-  },
-  credentials: true,
+  origin: true,
+  credentials: true
 }));
+
 
 // -------------------------------
 // 📚 Documentação Swagger
@@ -80,14 +63,13 @@ app.get('/', (req, res) => {
 
 app.use('/auth', authRoutes); // Autenticação
 app.use('/users', userRoutes); // Usuários
-app.use('/cases', casesRoutes); // Gerenciamento de Casos
+app.use('/cases', casesRoutes); // Casos
 app.use('/reports', reportRoutes); // Relatórios
-app.use('/dashboards', dashboardRoutes); // Painel
+app.use('/dashboards', dashboardRoutes); // Dashboard
 
-if(process.env.IS_PRODUCTION != 'true'){
+if (process.env.IS_PRODUCTION != 'true') {
   // Libera a pasta 'uploads' publicamente
   app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-
 }
 
 // -------------------------------
@@ -110,6 +92,6 @@ app.use((err, req, res, next) => {
 // -------------------------------
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`✅ Servidor rodando:na porta ${PORT}`);
+  console.log(`✅ Servidor rodando na porta ${PORT}`);
   console.log(`📚 Swagger => /api-docs`);
 });
